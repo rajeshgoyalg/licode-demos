@@ -1,56 +1,58 @@
-var localStream, room, screen_stream, teacher;
- 
-DEMO.init_demo = function (my_name) {
+let localStream; let room; let screen_stream; let
+  teacher;
 
+DEMO.init_demo = function (my_name) {
   teacher = getParameterByName('mode') === 'presenter';
 
   if (teacher) {
-    screen_stream = Erizo.Stream({screen: true});
-    localStream = Erizo.Stream({audio: true, video: true, data: true, screen: false, attributes: {name: my_name}});
-  
-    DEMO.chat_stream = localStream;
-  
-    DEMO.create_token("user", "presenter", function (response) {
-      var token = response;
-      console.log(token);
-      room = Erizo.Room({token: token});
+    screen_stream = Erizo.Stream({ screen: true });
+    localStream = Erizo.Stream({
+      audio: true, video: true, data: true, screen: false, attributes: { name: my_name },
+    });
 
-      screen_stream.addEventListener("access-accepted", function () {
+    DEMO.chat_stream = localStream;
+
+    DEMO.create_token('user', 'presenter', (response) => {
+      const token = response;
+      console.log(token);
+      room = Erizo.Room({ token });
+
+      screen_stream.addEventListener('access-accepted', () => {
         room.publish(screen_stream);
         screen_stream.show('screen');
       });
 
-      localStream.addEventListener("access-accepted", function () {
-        var subscribeToStreams = function (streams) {
-          for (var index in streams) {
-            var stream = streams[index];
+      localStream.addEventListener('access-accepted', () => {
+        const subscribeToStreams = function (streams) {
+          for (const index in streams) {
+            const stream = streams[index];
             if (localStream.getID() !== stream.getID() && screen_stream.getID() !== stream.getID()) {
               room.subscribe(stream);
             }
           }
         };
 
-        room.addEventListener("room-connected", function (roomEvent) {
+        room.addEventListener('room-connected', (roomEvent) => {
           DEMO.connect_to_chat();
           room.publish(localStream);
           subscribeToStreams(roomEvent.streams);
         });
 
-        room.addEventListener("stream-subscribed", function(streamEvent) {
-          var stream = streamEvent.stream;
-          stream.addEventListener("stream-data", DEMO.chat_message_received);
+        room.addEventListener('stream-subscribed', (streamEvent) => {
+          const { stream } = streamEvent;
+          stream.addEventListener('stream-data', DEMO.chat_message_received);
           DEMO.add_chat_participant(stream.getAttributes().name, stream.getID());
         });
 
-        room.addEventListener("stream-added", function (streamEvent) {
-          var streams = [];
+        room.addEventListener('stream-added', (streamEvent) => {
+          const streams = [];
           streams.push(streamEvent.stream);
           subscribeToStreams(streams);
         });
 
-        room.addEventListener("stream-removed", function (streamEvent) {
+        room.addEventListener('stream-removed', (streamEvent) => {
           // Remove stream from DOM
-          var stream = streamEvent.stream;
+          const { stream } = streamEvent;
           if (stream.hasScreen()) {
             document.getElementById('screen').innerHTML = '';
             show_share_panel();
@@ -64,69 +66,66 @@ DEMO.init_demo = function (my_name) {
 
         create_grid();
 
-        add_div_to_grid("localVideo");
-        localStream.show("localVideo");
-
+        add_div_to_grid('localVideo');
+        localStream.show('localVideo');
       });
       localStream.init();
       screen_stream.init();
-
+    });
+  } else {
+    localStream = Erizo.Stream({
+      audio: false, video: false, data: true, screen: false, attributes: { name: my_name },
     });
 
-
-  } else {
-    localStream = Erizo.Stream({audio: false, video: false, data: true, screen: false, attributes: {name: my_name}});
-
     DEMO.chat_stream = localStream;
-  
-    DEMO.create_token("user", "viewerWithData", function (response) {
-      var token = response;
-      console.log(token);
-      room = Erizo.Room({token: token});
 
-      localStream.addEventListener("access-accepted", function () {
-        var subscribeToStreams = function (streams) {
-          for (var index in streams) {
-            var stream = streams[index];
+    DEMO.create_token('user', 'viewerWithData', (response) => {
+      const token = response;
+      console.log(token);
+      room = Erizo.Room({ token });
+
+      localStream.addEventListener('access-accepted', () => {
+        const subscribeToStreams = function (streams) {
+          for (const index in streams) {
+            const stream = streams[index];
             if (localStream.getID() !== stream.getID()) {
               room.subscribe(stream);
             }
           }
         };
 
-        room.addEventListener("room-connected", function (roomEvent) {
+        room.addEventListener('room-connected', (roomEvent) => {
           DEMO.connect_to_chat();
           room.publish(localStream);
           subscribeToStreams(roomEvent.streams);
         });
 
-        room.addEventListener("stream-subscribed", function(streamEvent) {
-          var stream = streamEvent.stream;
+        room.addEventListener('stream-subscribed', (streamEvent) => {
+          const { stream } = streamEvent;
 
           if (stream.hasScreen()) {
             show_full_panel();
             stream.show('screen');
           } else if (stream.hasVideo()) {
-            add_div_to_grid("test" + stream.getID())
-            stream.show("test" + stream.getID());
-          } 
+            add_div_to_grid(`test${stream.getID()}`);
+            stream.show(`test${stream.getID()}`);
+          }
 
           if (stream.hasData()) {
-            stream.addEventListener("stream-data", DEMO.chat_message_received);
+            stream.addEventListener('stream-data', DEMO.chat_message_received);
             DEMO.add_chat_participant(stream.getAttributes().name, stream.getID());
           }
-          
         });
 
-        room.addEventListener("stream-added", function (streamEvent) {
-          var streams = [];
+        room.addEventListener('stream-added', (streamEvent) => {
+          const streams = [];
           streams.push(streamEvent.stream);
           subscribeToStreams(streams);
         });
 
-        room.addEventListener("stream-removed", function (streamEvent) {
+        room.addEventListener('stream-removed', (streamEvent) => {
           // Remove stream from DOM
-          var stream = streamEvent.stream;
+          const { stream } = streamEvent;
           if (stream.hasScreen()) {
             document.getElementById('screen').innerHTML = '';
           } else {
@@ -137,28 +136,22 @@ DEMO.init_demo = function (my_name) {
 
         room.connect();
         create_grid();
-
       });
       localStream.init();
     });
-
-
-
   }
 };
 
 var show_full_panel = function () {
+  const b = document.createElement('img');
+  b.setAttribute('id', 'full_screen_button');
+  b.src = '../../images/full_screen.png';
+  b.setAttribute('style', 'right: 0px; position: absolute; z-index: 1; width: 35px; cursor: pointer;');
 
-  var b = document.createElement('img');
-  b.setAttribute("id", "full_screen_button");
-  b.src = "../../images/full_screen.png"
-  b.setAttribute("style", "right: 0px; position: absolute; z-index: 1; width: 35px; cursor: pointer;");
-
-  var full_screen = false;
+  const full_screen = false;
 
   b.onclick = function () {
-
-    var elem = document.getElementById('video_grid');
+    const elem = document.getElementById('video_grid');
 
     if (elem.requestFullscreen) {
       elem.requestFullscreen();
@@ -176,12 +169,10 @@ var show_full_panel = function () {
 
     $('#conference_video_grid').css('display', 'none');
     $('#screen').css('height', '100%');
+  };
 
-  }
-
-  var fullScreenChanged = function () {
-
-    var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+  const fullScreenChanged = function () {
+    const fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
 
     if (fullscreenElement === null) {
       $('#video_grid').css('width', '');
@@ -191,25 +182,23 @@ var show_full_panel = function () {
       $('#conference_video_grid').css('display', '');
       $('#screen').css('height', '80%');
     }
-  }
+  };
 
   $(document).on('webkitfullscreenchange mozfullscreenchange fullscreenchange', fullScreenChanged);
 
   document.getElementById('screen').appendChild(b);
+};
 
-}
+var create_grid = function () {
+  const grid = document.getElementById('video_grid');
+  const newDiv = document.createElement('div');
+  newDiv.className += ' grid_element_border';
+  newDiv.setAttribute('id', 'screen');
 
-var create_grid = function() {
+  const newDiv3 = document.createElement('div');
+  newDiv3.setAttribute('id', 'conference_video_grid');
 
-  var grid = document.getElementById('video_grid');
-  var newDiv = document.createElement('div');
-  newDiv.className = newDiv.className + " grid_element_border";
-  newDiv.setAttribute("id", 'screen');
-
-  var newDiv3 = document.createElement('div');
-  newDiv3.setAttribute("id", 'conference_video_grid');
-
-  grid.appendChild(newDiv);  
+  grid.appendChild(newDiv);
   grid.appendChild(newDiv3);
 
   $('#screen').css('text-align', 'center');
@@ -217,70 +206,58 @@ var create_grid = function() {
   $('#screen').css('height', '80%');
   $('#screen').css('width', '100%');
   $('#screen').css('background-color', 'white');
+};
 
-}
+var add_div_to_grid = function (divId) {
+  // $('#video_grid').css('border', 'none');
 
-var add_div_to_grid = function(divId) {
+  const grid = document.getElementById('conference_video_grid');
+  const newDiv = document.createElement('div');
+  newDiv.setAttribute('id', `${divId}_container`);
+  newDiv.className = `${newDiv.className} grid_element_border`;
 
-    //$('#video_grid').css('border', 'none');
+  const newDiv2 = document.createElement('div');
+  newDiv2.setAttribute('id', divId);
+  newDiv2.className = `${newDiv2.className} grid_element`;
+  newDiv.appendChild(newDiv2);
 
-    var grid = document.getElementById('conference_video_grid');
-    var newDiv = document.createElement('div');
-    newDiv.setAttribute("id", divId + '_container');
-    newDiv.className = newDiv.className + " grid_element_border";
+  grid.appendChild(newDiv);
+  resizeGrid();
+};
 
-    var newDiv2 = document.createElement('div');
-    newDiv2.setAttribute("id", divId);
-    newDiv2.className = newDiv2.className + " grid_element";
-    newDiv.appendChild(newDiv2);
+var remove_div_from_grid = function (divId) {
+  const grid = document.getElementById('conference_video_grid');
+  grid.removeChild(document.getElementById(`${divId}_container`));
+  resizeGrid();
+};
 
-    grid.appendChild(newDiv);   
-    resizeGrid();
-}
+var resizeGrid = function () {
+  const grid = document.getElementById('conference_video_grid');
+  const nChilds = grid.childElementCount;
 
-var remove_div_from_grid = function(divId) {
+  if (nChilds < 6) {
+    const w = `${20 * nChilds}%`;
+    const m = `${(100 - (nChilds * 20)) / 2}%`;
 
-    var grid = document.getElementById('conference_video_grid');
-    grid.removeChild(document.getElementById(divId + '_container'));
-    resizeGrid();
-}
+    $('#conference_video_grid').css('width', w);
+    $('#conference_video_grid').css('margin-left', m);
 
-var resizeGrid = function() {
-
-    var grid = document.getElementById('conference_video_grid');
-    var nChilds = grid.childElementCount;
-
-    if (nChilds < 6) {
-
-      var w = 20*nChilds + '%';
-      var m = (100-(nChilds*20))/2 + '%';
-      
-      $('#conference_video_grid').css('width', w);
-      $('#conference_video_grid').css('margin-left', m);
-
-      for(var i = 0; i < nChilds; i++) {
-
-          grid.childNodes[i].setAttribute("style", "width: " + 100/nChilds + "%; height: 100%;");
-
-      }
-    } else {
-
-      $('#conference_video_grid').css('width', '100%');
-      $('#conference_video_grid').css('margin-left', '0');
-
-      for(var i = 0; i < nChilds; i++) {
-
-          grid.childNodes[i].setAttribute("style", "width: " + 100/nChilds + "%; height: 100%;");
-
-      }
-
-
+    for (var i = 0; i < nChilds; i++) {
+      grid.childNodes[i].setAttribute('style', `width: ${100 / nChilds}%; height: 100%;`);
     }
-} 
+  } else {
+    $('#conference_video_grid').css('width', '100%');
+    $('#conference_video_grid').css('margin-left', '0');
+
+    for (var i = 0; i < nChilds; i++) {
+      grid.childNodes[i].setAttribute('style', `width: ${100 / nChilds}%; height: 100%;`);
+    }
+  }
+};
 
 var getParameterByName = function (name) {
-    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
+  name = name.replace(/[\[]/, '\\\[').replace(/[\]]/, '\\\]');
+  const regex = new RegExp(`[\\?&]${name}=([^&#]*)`);
+  const results = regex.exec(location.search);
+  return results == null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};

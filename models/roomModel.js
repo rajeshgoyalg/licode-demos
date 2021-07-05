@@ -1,52 +1,42 @@
-var N = require('./nuve');
-var nuveHost = require('./../config').nuve_host;
+const N = require('./nuve');
+const nuveHost = require('../config').nuve_host;
 
 exports.roomList = {};
 
-exports.fetch = function(auth, callback, error) {
-
-	N.API.init(auth.id, auth.key, nuveHost);
-	N.API.getRooms(function(rooms) {
-		exports.roomList = JSON.parse(rooms);
-		callback();
-	}, function() {
-		error();		
-	});
-
-	
+exports.fetch = function (auth, callback, error) {
+  N.API.init(auth.id, auth.key, nuveHost);
+  N.API.getRooms((rooms) => {
+    exports.roomList = JSON.parse(rooms);
+    callback();
+  }, () => {
+    error();
+  });
 };
 
-exports.get = function(roomId, auth, callback, error) {
-
-	N.API.init(auth.id, auth.key, nuveHost);
-	N.API.getRoom(roomId, function(room) {
-		callback(JSON.parse(room));
-	}, function() {
-		error();		
-	});
-
-	
+exports.get = function (roomId, auth, callback, error) {
+  N.API.init(auth.id, auth.key, nuveHost);
+  N.API.getRoom(roomId, (room) => {
+    callback(JSON.parse(room));
+  }, () => {
+    error();
+  });
 };
 
-exports.create = function(roomName, data, p2p, auth, callback, error) {
-
-	N.API.init(auth.id, auth.key, nuveHost);
-	N.API.createRoom(roomName, function(rooms) {
-		callback();
-	}, function() {
-		error();		
-	}, {data: data, p2p: p2p});
+exports.create = function (roomName, data, p2p, auth, callback, error) {
+  N.API.init(auth.id, auth.key, nuveHost);
+  N.API.createRoom(roomName, (rooms) => {
+    callback();
+  }, () => {
+    error();
+  }, { data, p2p });
 };
 
-exports.delete = function(roomId, auth, callback, error) {
+exports.delete = function (roomId, auth, callback, error) {
+  N.API.init(auth.id, auth.key, nuveHost);
 
-	N.API.init(auth.id, auth.key, nuveHost);
-
-	N.API.deleteRoom(roomId, function(rooms) {
-		callback();
-	}, function() {
-		error();		
-	});
-
-	
+  N.API.deleteRoom(roomId, (rooms) => {
+    callback();
+  }, () => {
+    error();
+  });
 };
